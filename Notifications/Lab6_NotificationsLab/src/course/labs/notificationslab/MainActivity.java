@@ -83,9 +83,10 @@ public class MainActivity extends Activity implements SelectionListener,
 		if (!mIsFresh) {
 			installDownloaderTaskFragment();
 
-			// TODO: Show a Toast message displaying
+			// Show a Toast message displaying
 			// R.string.download_in_progress string
-
+			Context context = getApplicationContext();
+			Toast.makeText(context, R.string.download_in_progress_string, Toast.LENGTH_LONG).show();
 
 			
 			
@@ -95,14 +96,14 @@ public class MainActivity extends Activity implements SelectionListener,
 				@Override
 				public void onReceive(Context context, Intent intent) {
 
-					// TODO:
+					//
 					// Check to make sure this is an ordered broadcast
 					// Let sender know that the Intent was received
 					// by setting result code to MainActivity.IS_ALIVE
+                    if(isOrderedBroadcast()){
+                        setResultCode(MainActivity.IS_ALIVE);
+                    }
 
-
-					
-					
 					
 				}
 			};
@@ -125,7 +126,7 @@ public class MainActivity extends Activity implements SelectionListener,
 		// Give Fragment to the FragmentManager
 		FragmentTransaction transaction = mFragmentManager.beginTransaction();
 		transaction.replace(R.id.fragment_container, mFriendsFragment,
-				TAG_FRIENDS_FRAGMENT);
+                TAG_FRIENDS_FRAGMENT);
 		transaction.commit();
 	}
 
@@ -150,28 +151,27 @@ public class MainActivity extends Activity implements SelectionListener,
 	protected void onResume() {
 		super.onResume();
 
-		// TODO:
 		// Register the BroadcastReceiver to receive a
 		// DATA_REFRESHED_ACTION broadcast
-
-		
-		
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(DATA_REFRESHED_ACTION);
+        if(mRefreshReceiver != null){
+            registerReceiver(mRefreshReceiver, filter);
+        }
 		
 	}
 
 	@Override
 	protected void onPause() {
+        // Unregister the BroadcastReceiver if it has been registered
+        // Note: check that mRefreshReceiver is not null before attempting to
+        // unregister in order to work around an Instrumentation issue
+        if(mRefreshReceiver != null){
+            unregisterReceiver(mRefreshReceiver);
+        }
 
-		// TODO:
-		// Unregister the BroadcastReceiver if it has been registered
-		// Note: check that mRefreshReceiver is not null before attempting to
-		// unregister in order to work around an Instrumentation issue
+        super.onPause();
 
-
-		
-		
-		
-		super.onPause();
 
 	}
 

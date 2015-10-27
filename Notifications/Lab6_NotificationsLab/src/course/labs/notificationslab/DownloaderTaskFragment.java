@@ -224,14 +224,13 @@ public class DownloaderTaskFragment extends Fragment {
                             // Set the notification View's text to
                             // reflect whether the download completed
                             // successfully
-                            String notificationString;
                             if(success){
-                                notificationString = getString(R.string.download_succes_string);
+                                mContentView.setTextViewText(R.id.text, successMsg);
                             } else {
-                                notificationString = getString(R.string.download_failed_string);
+                                mContentView.setTextViewText(R.id.text, failMsg);
                             }
 
-                            mContentView.setTextViewText(R.id.text, notificationString);
+
 
                             // Use the Notification.Builder class to
                             // create the Notification. You will have to set
@@ -241,8 +240,7 @@ public class DownloaderTaskFragment extends Fragment {
                             // setAutoCancel(true).
 
                             Notification.Builder notificationBuilder = new Notification.Builder(
-                                    mContext).setTicker(notificationString)
-                                    .setSmallIcon(android.R.drawable.stat_sys_warning)
+                                    mContext).setSmallIcon(android.R.drawable.stat_sys_warning)
                                     .setAutoCancel(true)
                                     .setContent(mContentView).setContentIntent(pendingIntent);
 

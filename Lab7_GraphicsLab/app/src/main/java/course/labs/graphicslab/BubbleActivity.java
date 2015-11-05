@@ -130,21 +130,41 @@ public class BubbleActivity extends Activity {
 
 			// If a fling gesture starts on a BubbleView then change the
 			// BubbleView's velocity
+            BubbleView testBubble;
+            float touchX, testBubbleX;
+            float touchY, testBubbleY;
+
 
 			@Override
 			public boolean onFling(MotionEvent event1, MotionEvent event2,
 					float velocityX, float velocityY) {
 
-				// TODO - Implement onFling actions.
+				// Implement onFling actions.
 				// You can get all Views in mFrame using the
 				// ViewGroup.getChildCount() method
 
+                //Find the location of the ACTION_DOWN event in event1
+                touchX = event1.getX();
+                touchY = event1.getY();
 
-				
-				
-				
+                // Loop through all of the available views and find out if the ACTION_DOWN
+                // Corresponds to their location
+                for(int idx = 0; idx < mFrame.getChildCount(); idx++){
+
+                    testBubble = (BubbleView) mFrame.getChildAt(idx);
+
+                    // Compute the distance and compare to the bubble radius
+                    if( testBubble.intersects(touchX, touchY) ){
+
+                        //Set Velocity of Bubble
+                        testBubble.deflect(velocityX, velocityY);
+
+                        //Invalidate view to redraw
+                        testBubble.invalidate();
+                        return true;
+                    }
+                }
 				return false;
-
 			}
 
 			// If a single tap intersects a BubbleView, then pop the BubbleView
@@ -154,50 +174,58 @@ public class BubbleActivity extends Activity {
 			@Override
 			public boolean onSingleTapConfirmed(MotionEvent event) {
 
-				// TODO - Implement onSingleTapConfirmed actions.
+				// Implement onSingleTapConfirmed actions.
 				// You can get all Views in mFrame using the
 				// ViewGroup.getChildCount() method
 
+                //Find the location of the ACTION_DOWN event in event
+                touchX = event.getX();
+                touchY = event.getY();
 
+                // Loop through all of the available views and find out if the ACTION_DOWN
+                // Corresponds to their location
+                for(int idx = 0; idx < mFrame.getChildCount(); idx++){
 
-				
-				
-				
-				
-				
-				
-				
-				
-				
-				
-				return false;
+                    testBubble = (BubbleView) mFrame.getChildAt(idx);
+                    testBubbleX = testBubble.getX();
+                    testBubbleY = testBubble.getY();
+
+                    // Compute the distance and compare to the bubble radius
+                    if( testBubble.intersects(touchX, touchY) ){
+
+                        //Pop the bubble
+                        testBubble.stop(true);
+
+                        //Invalidate view to redraw
+                        return true;
+                    }
+                }
+
+                // If loop falls through, then create a new bubble
+                testBubble = new BubbleView(getApplicationContext(), touchX, touchY);
+                mFrame.addView(testBubble);
+
+                //Action is consumed
+                return true;
 			}
 		});
 	}
 
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
-
-		// TODO - Delegate the touch to the gestureDetector
-
-		
-		
-		
-		
-		
-		
-		return false;
-	
+		// Delegate the touch to the gestureDetector
+		return mGestureDetector.onTouchEvent(event);
 	}
 
 	@Override
 	protected void onPause() {
 		
-		// TODO - Release all SoundPool resources
-
-
-
-
+		// Release all SoundPool resources
+        if (null != mSoundPool) {
+            mSoundPool.unload(mSoundID);
+            mSoundPool.release();
+            mSoundPool = null;
+        }
 
 		super.onPause();
 	}
@@ -326,14 +354,10 @@ public class BubbleActivity extends Activity {
 					// move one step. If the BubbleView exits the display, 
 					// stop the BubbleView's Worker Thread. 
 					// Otherwise, request that the BubbleView be redrawn.
-                    mXPos += mDx;
-                    mYPos += mDy;
+                    boolean isOffScreen = moveWhileOnScreen();
 
                     //Check if the bubble is still visible in the display
-                    if(mXPos + mRadius < 0 ||
-                            mYPos + mRadius < 0 ||
-                            mXPos - mRadius > mDisplayWidth ||
-                            mYPos - mRadius < mDisplayHeight){
+                    if(isOffScreen){
                         stop(false);        //Can this be called from within the worker thread and not the UI thread
                     } else {
                         postInvalidate();
@@ -365,6 +389,7 @@ public class BubbleActivity extends Activity {
 				public void run() {
 
 					// TODO - Remove the BubbleView from mFrame
+                    //mFrame.removeViewInLayout();??
 
 					// If the bubble was popped by user,
 					// play the popping sound
@@ -379,12 +404,9 @@ public class BubbleActivity extends Activity {
 		// Change the Bubble's speed and direction
 		private synchronized void deflect(float velocityX, float velocityY) {
 
-			//TODO - set mDx and mDy to be the new velocities divided by the REFRESH_RATE
-			
-
-
-
-
+			// Set mDx and mDy to be the new velocities divided by the REFRESH_RATE
+			mDx = velocityX / REFRESH_RATE;
+            mDy = velocityY / REFRESH_RATE;
 
 		}
 
@@ -421,21 +443,20 @@ public class BubbleActivity extends Activity {
 		// operation
 		private synchronized boolean moveWhileOnScreen() {
 
-			// TODO - Move the BubbleView
+			// Move the BubbleView
+            mXPos += mDx;
+            mYPos += mDy;
 
-
-			return false;
+			return !isOutOfView();
 		}
 
 		// Return true if the BubbleView is off the screen after the move
 		// operation
 		private boolean isOutOfView() {
 
-			// TODO - Return true if the BubbleView is off the screen after
+			// Return true if the BubbleView is off the screen after
 			// the move operation
-
-
-			return false;
+            return mXPos < 0|| mYPos < 0 || mXPos > mDisplayWidth || mYPos > mDisplayHeight;
 		}
 	}
 

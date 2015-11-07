@@ -131,8 +131,8 @@ public class BubbleActivity extends Activity {
 			// If a fling gesture starts on a BubbleView then change the
 			// BubbleView's velocity
             BubbleView testBubble;
-            float touchX, testBubbleX;
-            float touchY, testBubbleY;
+            float touchX;
+            float touchY;
 
 
 			@Override
@@ -182,21 +182,22 @@ public class BubbleActivity extends Activity {
                 touchX = event.getX();
                 touchY = event.getY();
 
+                Log.i(TAG, "Single Tap Received");
+
                 // Loop through all of the available views and find out if the ACTION_DOWN
                 // Corresponds to their location
                 for(int idx = 0; idx < mFrame.getChildCount(); idx++){
 
                     testBubble = (BubbleView) mFrame.getChildAt(idx);
-                    testBubbleX = testBubble.getX();
-                    testBubbleY = testBubble.getY();
 
                     // Compute the distance and compare to the bubble radius
                     if( testBubble.intersects(touchX, touchY) ){
-
+                        Log.i(TAG, "Single tap overlapping Bubble View");
                         //Pop the bubble
                         testBubble.stop(true);
 
                         //Invalidate view to redraw
+                        testBubble.invalidate();
                         return true;
                     }
                 }
@@ -204,6 +205,7 @@ public class BubbleActivity extends Activity {
                 // If loop falls through, then create a new bubble
                 testBubble = new BubbleView(getApplicationContext(), touchX, touchY);
                 mFrame.addView(testBubble);
+				testBubble.start();
 
                 //Action is consumed
                 return true;
@@ -354,7 +356,7 @@ public class BubbleActivity extends Activity {
 					// move one step. If the BubbleView exits the display, 
 					// stop the BubbleView's Worker Thread. 
 					// Otherwise, request that the BubbleView be redrawn.
-                    boolean isOffScreen = moveWhileOnScreen();
+                    boolean isOffScreen = !moveWhileOnScreen();
 
                     //Check if the bubble is still visible in the display
                     if(isOffScreen){
@@ -370,7 +372,7 @@ public class BubbleActivity extends Activity {
 		private synchronized boolean intersects(float x, float y) {
 
 			// Return true if the BubbleView intersects position (x,y)
-		    return (x-mXPos) * (x-mXPos) + (y-mYPos) * (y-mYPos) <= mRadiusSquared ;
+		    return ((x-(mXPos+mRadius)) * (x-(mXPos+mRadius)) + (y-(mYPos+mRadius)) * (y-(mYPos+mRadius))) <= mRadiusSquared ;
 		}
 
 		// Cancel the Bubble's movement
@@ -384,12 +386,13 @@ public class BubbleActivity extends Activity {
 			}
 
 			// This work will be performed on the UI Thread
+            final BubbleView thisBubble = this;
 			mFrame.post(new Runnable() {
 				@Override
 				public void run() {
 
-					// TODO - Remove the BubbleView from mFrame
-                    //mFrame.removeViewInLayout();??
+					// Remove the BubbleView from mFrame
+                    mFrame.removeView(thisBubble);
 
 					// If the bubble was popped by user,
 					// play the popping sound
@@ -414,28 +417,21 @@ public class BubbleActivity extends Activity {
 		@Override
 		protected synchronized void onDraw(Canvas canvas) {
 
-			// TODO - save the canvas
+			// save the canvas
+			canvas.save();
 
+			// increase the rotation of the original image by mDRotate
+			mRotate += mDRotate;
 
-			
-			// TODO - increase the rotation of the original image by mDRotate
-
-
-
-			
-			// TODO Rotate the canvas by current rotation
+			// Rotate the canvas by current rotation
 			// Hint - Rotate around the bubble's center, not its position
+			canvas.rotate(mRotate, mXPos + mScaledBitmapWidth/2, mYPos + mScaledBitmapWidth/2);
 
+			// draw the bitmap at its new location
+			canvas.drawBitmap(mScaledBitmap, mXPos, mYPos, mPainter);
 
-
-			
-			// TODO - draw the bitmap at its new location
-			
-
-			
-			// TODO - restore the canvas
-
-
+			// restore the canvas
+			canvas.restore();
 			
 		}
 
@@ -456,7 +452,7 @@ public class BubbleActivity extends Activity {
 
 			// Return true if the BubbleView is off the screen after
 			// the move operation
-            return mXPos < 0|| mYPos < 0 || mXPos > mDisplayWidth || mYPos > mDisplayHeight;
+            return mXPos+2*mRadius < 0|| mYPos+2*mRadius < 0 || mXPos > mDisplayWidth || mYPos > mDisplayHeight;
 		}
 	}
 

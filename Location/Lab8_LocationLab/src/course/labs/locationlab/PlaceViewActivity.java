@@ -7,6 +7,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -25,7 +26,9 @@ public class PlaceViewActivity extends ListActivity implements LocationListener 
 	private Location mLastLocationReading;
 	private PlaceViewAdapter mAdapter;
 	private LocationManager mLocationManager;
+	private LocationListener mLocationListener; 	//Already implemented
 	private boolean mMockLocationOn = false;
+	private Context mContext;
 
 	// default minimum time between new readings
 	private long mMinTime = 5000;
@@ -46,12 +49,15 @@ public class PlaceViewActivity extends ListActivity implements LocationListener 
 		mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 		ListView placesListView = getListView();
 
-		// TODO - add a footerView to the ListView
+		// add a footerView to the ListView
 		// You can use footer_view.xml to define the footer
 
-        View footerView = null;
+		mContext = getApplicationContext();
+        View footerView = LayoutInflater.from(mContext).inflate(R.layout.footer_view, null);
+		placesListView.addFooterView(footerView);
 
 		// TODO - footerView must respond to user clicks, handling 3 cases:
+		// START THE BUTTON DISABLED UNTIL LOCATION IS ACHIEVED
 
 		// There is no current location - response is up to you. The best
 		// solution is to always disable the footerView until you have a
@@ -73,7 +79,7 @@ public class PlaceViewActivity extends ListActivity implements LocationListener 
 			public void onClick(View arg0) {
 
 
-                
+                //run the async task
                 
                 
                 
@@ -105,27 +111,35 @@ public class PlaceViewActivity extends ListActivity implements LocationListener 
 
 		startMockLocationManager();
 
-		// TODO - Check NETWORK_PROVIDER for an existing location reading.
+		// Check NETWORK_PROVIDER for an existing location reading.
 		// Only keep this last reading if it is fresh - less than 5 minutes old
+		if (null == (mLocationManager = (LocationManager) getSystemService((Context.LOCATION_SERVICE))))
+			finish();
 
+        mLastLocationReading = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
 
-        
-        
-        mLastLocationReading = null;
+		// Check if the data is fresh, otherwise set to null
+		if(mLastLocationReading != null) {
+			if (ageInMilliseconds(mLastLocationReading) > FIVE_MINS) {
+				mLastLocationReading = null;
+			}
+		}
 
 
 		// TODO - register to receive location updates from NETWORK_PROVIDER
+		// How to register the Listeners?
 
 
-        
+
+
         
 	}
 
 	@Override
 	protected void onPause() {
 
-		// TODO - unregister for location updates
-
+		// unregister for location updates
+		mLocationManager.removeUpdates(mLocationListener);
         
         
 		shutdownMockLocationManager();
@@ -175,21 +189,20 @@ public class PlaceViewActivity extends ListActivity implements LocationListener 
 	@Override
 	public void onLocationChanged(Location currentLocation) {
 
-		// TODO - Update location considering the following cases.
+		// Update location considering the following cases.
 		// 1) If there is no last location, set the last location to the current
 		// location.
 		// 2) If the current location is older than the last location, ignore
 		// the current location
 		// 3) If the current location is newer than the last locations, keep the
 		// current location.
+		if(mLastLocationReading == null){
+			mLastLocationReading = currentLocation;
+		}
+		else if(ageInMilliseconds(currentLocation) < ageInMilliseconds(mLastLocationReading)){
+			mLastLocationReading = currentLocation;
+		}
 
-        
-        
-        
-        
-        
-        
-			mLastLocationReading = null;
 	}
 
 	@Override
